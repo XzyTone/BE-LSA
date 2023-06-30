@@ -20,17 +20,17 @@ async function startExam(req, res) {
       return res.status(404).json({ message: 'Student not found' });
     }
 
+    // Cek apakah siswa telah memulai atau telah menyelesaikan ujian sebelumnya
     const participant = exam.participants.find((p) => p.student.equals(student._id));
-    if (!participant) {
-      exam.participants.push({ student: student._id, examToken, answer: [] });
-      await exam.save();
-
-      student.exams.push(exam._id); // Add the exam reference to the student's exams array
-      await student.save();
-    } else {
-      participant.examToken = examToken;
-      await exam.save();
+    if (participant) {
+      return res.status(400).json({ message: 'You have already started the exam' });
     }
+
+    exam.participants.push({ student: student._id, examToken, answer: [] });
+    await exam.save();
+
+    student.exams.push(exam._id); // Add the exam reference to the student's exams array
+    await student.save();
 
     res.status(200).json({ message: 'Exam started' });
   } catch (error) {
@@ -56,13 +56,18 @@ async function submitExam(req, res) {
       return res.status(404).json({ message: 'Student not found' });
     }
 
-    // Memasukkan jawaban siswa ke dalam ujian
-    const participantIndex = exam.participants.findIndex((p) => p.student.equals(student._id));
-    if (participantIndex === -1) {
-      return res.status(404).json({ message: 'Participant not found' });
+    // Memastikan siswa telah memulai ujian sebelum mengirimkan jawaban
+    const participant = exam.participants.find((p) => p.student.equals(student._id));
+    if (!participant) {
+      return res.status(400).json({ message: 'You have not started the exam' });
     }
 
-    exam.participants[participantIndex].answer = answers; // Perbarui properti answer dengan array jawaban siswa
+    // Memastikan siswa belum mengirimkan jawaban sebelumnya
+    if (participant.answer.length > 0) {
+      return res.status(400).json({ message: 'You have already submitted the exam' });
+    }
+
+    participant.answer = answers; // Perbarui properti answer dengan array jawaban siswa
 
     await exam.save();
 
@@ -71,6 +76,9 @@ async function submitExam(req, res) {
     res.status(500).json({ message: 'Failed to submit exam' });
   }
 }
+
+module.exports = { startExam, submitExam };
+
 
  
 
