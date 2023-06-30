@@ -4,39 +4,40 @@ const Exam = require('../models/Exam');
 const Student = require('../models/Student');
 
 async function startExam(req, res) {
-    const { examId } = req.params;
-    const { examToken } = req.body;
-  
-    try {
-      // Mencari ujian berdasarkan ID
-      const exam = await Exam.findById(examId);
-      if (!exam) {
-        return res.status(404).json({ message: 'Exam not found' });
-      }
-  
-      // Mencari siswa berdasarkan token dan memasukkan token ke dalam ujian
-      const student = await Student.findById(req.userId);
-      if (!student) {
-        return res.status(404).json({ message: 'Student not found' });
-      }
-  
-      const participant = exam.participants.find((p) => p.student.equals(student._id));
-      if (!participant) {
-        exam.participants.push({ student: student._id, examToken, answer: [] });
-        await exam.save();
-  
-        student.exams.push(exam._id); // Add the exam reference to the student's exams array
-        await student.save();
-      } else {
-        participant.examToken = examToken;
-        await exam.save();
-      }
-  
-      res.status(200).json({ message: 'Exam started' });
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to start exam' });
+  const { examId } = req.params;
+  const { examToken } = req.body;
+
+  try {
+    // Mencari ujian berdasarkan ID
+    const exam = await Exam.findById(examId);
+    if (!exam) {
+      return res.status(404).json({ message: 'Exam not found' });
     }
-  }  
+
+    // Mencari siswa berdasarkan token dan memasukkan token ke dalam ujian
+    const student = await Student.findById(req.userId);
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    const participant = exam.participants.find((p) => p.student.equals(student._id));
+    if (!participant) {
+      exam.participants.push({ student: student._id, examToken, answer: [] });
+      await exam.save();
+
+      student.exams.push(exam._id); // Add the exam reference to the student's exams array
+      await student.save();
+    } else {
+      participant.examToken = examToken;
+      await exam.save();
+    }
+
+    res.status(200).json({ message: 'Exam started' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to start exam' });
+  }
+}
+
 
 async function submitExam(req, res) {
   const { examId } = req.params;
@@ -44,10 +45,6 @@ async function submitExam(req, res) {
 
   try {
     // Mencari ujian berdasarkan ID
-    console.log('Received request to submit exam');
-    console.log('Exam ID:', examId);
-    console.log('Student ID:', req.userId);
-    console.log('Answers:', answers);
     const exam = await Exam.findById(examId);
     if (!exam) {
       return res.status(404).json({ message: 'Exam not found' });

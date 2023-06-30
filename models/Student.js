@@ -3,17 +3,12 @@
 const mongoose = require('mongoose');
 
 const studentSchema = new mongoose.Schema({
-  exams: [
-    {
-      exam: {
+    exams: [
+      {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Exam'
-      },
-      nilai: {
-        type: Number // nilai akhir ujian essay masuk ke sini
       }
-    }
-  ],
+    ],
     name: {
       type: String,
       required: true

@@ -19,18 +19,13 @@ const examSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Student'
       },
-      answer: [String] // Jawaban siswa
+      answer: [String] // Perbarui properti answer menjadi array
     }
   ],
   examToken:String,
   startTime: Date,
   endTime: Date,
-  refreshTokens: Boolean,
-  teacher: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Teacher'
-  }
+  refreshTokens: Boolean
 });
 
 module.exports = mongoose.model('Exam', examSchema);
-

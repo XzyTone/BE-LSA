@@ -24,7 +24,7 @@ async function createExam(req, res) {
           exam: null,
           question: q.question,
           answerKey: q.answerKey, // Menyimpan kunci jawaban guru
-          score: q.score // Menyimpan guru membuat bobot per soal ujiannya
+          score: q.score // Menyimpan guru membuat bobot persoalnya
         });
         await question.save();
         return question._id;
@@ -64,58 +64,12 @@ function generateExamToken() {
     return token;
   }
   
-  async function evaluateExam(req, res) {
-    const { examId } = req.params;
-  
-    try {
-      // Mencari ujian berdasarkan ID
-      const exam = await Exam.findById(examId).populate('questions');
-      if (!exam) {
-        return res.status(404).json({ message: 'Exam not found' });
-      }
-  
-      // Mendapatkan semua peserta ujian
-      const participants = exam.participants;
-  
-      // Menilai jawaban setiap peserta ujian
-      for (const participant of participants) {
-        const participantAnswers = participant.answer;
-  
-        // Menghitung skor LSA untuk setiap jawaban peserta
-        const lsaScores = participantAnswers.map((answer, index) => {
-          const question = exam.questions[index];
-          const answerKey = question.answerKey;
-  
-          return calculateLSAScore(answer, answerKey);
-        });
-  
-        // Menghitung skor akhir dengan menggunakan Cosine Similarity
-        const finalScore = calculateCosineSimilarity(lsaScores, exam.questions);
-  
-        // Menyimpan nilai akhir peserta pada model Student
-        const student = await Student.findById(participant.student.student);
-        if (student) {
-          const examIndex = student.exams.findIndex((e) => e.exam.equals(exam._id));
-          if (examIndex !== -1) {
-            student.exams[examIndex].nilai = finalScore;
-            await student.save();
-          }
-        }
-      }
-  
-      res.status(200).json({ message: 'Exam evaluated' });
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to evaluate exam' });
-    }
-  }
-  
-  
-  
+
   async function exportStudentAnswers(req, res) {
     try {
       const { examId, studentId } = req.params;
   
-      // Mengambil data ujian berdasarkan ID, melakukan populate pada 'participants.student' dan 'questions'
+      // Retrieve the exam data by ID, populating both 'participants.student' and 'questions'
       const exam = await Exam.findById(examId).populate({
         path: 'participants.student',
         select: 'name',
@@ -125,7 +79,7 @@ function generateExamToken() {
         return res.status(404).json({ message: 'Exam not found' });
       }
   
-      // Mencari peserta dengan ID siswa yang sesuai
+      // Find the participant with the matching student ID
       const participant = exam.participants.find(
         (participant) => participant.student._id.toString() === studentId
       );
@@ -134,7 +88,7 @@ function generateExamToken() {
         return res.status(404).json({ message: 'Participant not found' });
       }
   
-      // Membuat folder untuk menyimpan file PDF
+      // Create a folder to store the PDF file
       const folderPath = './student_answers';
       if (!fs.existsSync(folderPath)) {
         fs.mkdirSync(folderPath);
@@ -144,10 +98,10 @@ function generateExamToken() {
       const fileName = `${studentName}_answers.pdf`;
       const filePath = `${folderPath}/${fileName}`;
   
-      // Membuat dokumen PDF baru menggunakan pdfkit
+      // Create a new PDF document using pdfkit
       const doc = new PDFDocument();
   
-      // Mengisi konten PDF dengan pertanyaan dan jawaban siswa
+      // Fill the PDF content with the student's questions and answers
       doc.text(`Student: ${studentName}`);
       doc.moveDown();
   
@@ -159,7 +113,7 @@ function generateExamToken() {
         doc.moveDown();
       });
   
-      // Menyimpan file PDF ke sistem file
+      // Save the PDF file to the file system
       doc.pipe(fs.createWriteStream(filePath));
       doc.end();
   
@@ -169,4 +123,7 @@ function generateExamToken() {
     }
   }
   
-  module.exports = { createExam, evaluateExam, exportStudentAnswers };
+  
+    
+
+module.exports = { createExam, exportStudentAnswers };
