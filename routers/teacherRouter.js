@@ -1,10 +1,9 @@
-// routers/teacherRouter.js
-
 const express = require('express');
 const {
   createExam,
   exportStudentAnswers,
-  evaluateExam
+  evaluateExam,
+  refreshExamToken // Add this line
 } = require('../controllers/teacherController');
 const {
   verifyToken,
@@ -15,5 +14,7 @@ const router = express.Router();
 
 router.post('/exams', verifyToken, authorizeTeacher, createExam);
 router.get('/exams/:examId/export-answers/:studentId', verifyToken, authorizeTeacher, exportStudentAnswers);
+router.post('/exams/:examId/evaluate', verifyToken, authorizeTeacher, evaluateExam);
+router.post('/exams/:examId/refresh-token', verifyToken, authorizeTeacher, refreshExamToken); // Add this line
 
 module.exports = router;

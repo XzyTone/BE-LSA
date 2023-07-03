@@ -1,5 +1,35 @@
 // models/Exam.js
 
+// const mongoose = require('mongoose');
+
+// const examSchema = new mongoose.Schema({
+//   subject: {
+//     type: String,
+//     required: true
+//   },
+//   questions: [
+//     {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: 'Question'
+//     }
+//   ],
+//   participants: [
+//     {
+//       student: {
+//         type: mongoose.Schema.Types.ObjectId,
+//         ref: 'Student'
+//       },
+//       answer: [String] // Perbarui properti answer menjadi array
+//     }
+//   ],
+//   examToken:String,
+//   startTime: Date,
+//   endTime: Date,
+//   refreshTokens: Boolean
+// });
+
+// module.exports = mongoose.model('Exam', examSchema);
+
 const mongoose = require('mongoose');
 
 const examSchema = new mongoose.Schema({
@@ -19,13 +49,36 @@ const examSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Student'
       },
-      answer: [String] // Perbarui properti answer menjadi array
+      examToken: {
+        type: String,
+        required: true
+      },
+      answer: [
+        {
+          type: String
+        }
+      ]
     }
   ],
-  examToken:String,
-  startTime: Date,
-  endTime: Date,
-  refreshTokens: Boolean
+  duration: {
+    type: String,
+    required: true
+  },
+  endTime: {
+    type: Date,
+    required: true
+  },
+  refreshTokens: [
+    {
+      type: String
+    }
+  ],
+  examToken: {
+    type: String,
+    required: true
+  }
 });
 
-module.exports = mongoose.model('Exam', examSchema);
+const Exam = mongoose.model('Exam', examSchema);
+
+module.exports = Exam;

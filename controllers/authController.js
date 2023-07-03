@@ -9,6 +9,12 @@ async function register(req, res) {
   const { name, email, password, role } = req.body;
 
   try {
+    // Check if email already exists
+    const existingUser = await Student.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
+
     // Membuat hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -35,34 +41,56 @@ async function register(req, res) {
 }
 
 async function login(req, res) {
-    const { email, password } = req.body;
-  
-    try {
-      // Mencari pengguna berdasarkan email
-      let user = await Student.findOne({ email });
-      
-      // Jika tidak ada siswa dengan email tersebut, coba mencari guru
-      if (!user) {
-        user = await Teacher.findOne({ email });
-      }
-      
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
-      }
-  
-      // Memverifikasi password
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-      if (!isPasswordValid) {
-        return res.status(401).json({ message: 'Invalid password' });
-      }
-  
-      // Menghasilkan token
-      const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  
-      res.status(200).json({ message: 'Login successful', token });
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to login' });
-    }
-  }
+  const { email, password } = req.body;
 
-module.exports = { register, login };
+  try {
+    // Mencari pengguna berdasarkan email
+    let user = await Student.findOne({ email });
+
+    // Jika tidak ada siswa dengan email tersebut, coba mencari guru
+    if (!user) {
+      user = await Teacher.findOne({ email });
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Memverifikasi password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid password' });
+    }
+
+    // Menghasilkan token
+    const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.status(200).json({ message: 'Login successful', token, role: user.role });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to login' });
+  }
+}
+async function refresh(req, res) {
+  try {
+    // Find the user based on the userId in the request
+    let user;
+    if (req.role === 'student') {
+      user = await Student.findById(req.userId);
+    } else if (req.role === 'teacher') {
+      user = await Teacher.findById(req.userId);
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Generate a new token with a longer duration
+    const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+    res.status(200).json({ message: 'Token refreshed', token, user });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to refresh token' });
+  }
+}
+
+module.exports = { register, login, refresh };
