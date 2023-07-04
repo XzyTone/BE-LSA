@@ -23,7 +23,7 @@ app.use(
 );
 
 mongoose
-  .connect(process.env.MONGODB_URI, {
+  .connect(process.env.MONGODB_URI_DEV, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })

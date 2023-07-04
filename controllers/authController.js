@@ -64,8 +64,6 @@ async function login(req, res) {
       return res.status(401).json({ message: "Invalid password" });
     }
 
-    console.log("user: ", user);
-
     // Menghasilkan token
     const token = jwt.sign(
       { userId: user._id, role: user.role },
@@ -73,9 +71,16 @@ async function login(req, res) {
       { expiresIn: "1h" }
     );
 
-    res
-      .status(200)
-      .json({ message: "Login successful", token, role: user.role });
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: "Failed to login" });
   }

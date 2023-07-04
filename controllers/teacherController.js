@@ -7,6 +7,7 @@ const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const natural = require("natural");
 const _ = require("lodash");
+const Student = require("../models/Student");
 
 async function addStudents(req, res) {
   const { studentIds } = req.body;
@@ -25,12 +26,53 @@ async function addStudents(req, res) {
   }
 }
 
+async function getStudents(req, res) {
+  try {
+    const teacher = await Teacher.findById(req.userId);
+
+    if (!teacher) {
+      return res.status(404).json({ message: "Teacher not found" });
+    }
+
+    const students = await Student.find({ _id: teacher.students });
+
+    const formattedStudents = students.map((student) => {
+      return {
+        _id: student._id,
+        name: student.name,
+        email: student.email,
+      };
+    });
+
+    return res.status(200).json({ data: formattedStudents });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to get Exams" });
+  }
+}
+
+async function getExams(req, res) {
+  try {
+    const teacher = await Teacher.findById(req.userId);
+
+    if (!teacher) {
+      return res.status(404).json({ message: "Teacher not found" });
+    }
+
+    const exams = await Exam.find({ teacherId: teacher._id });
+
+    return res.status(200).json({ data: exams });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to get Exams" });
+  }
+}
+
 async function createExam(req, res) {
   const { subject, questions, duration, endTime, refreshTokens } = req.body;
 
   try {
     // Mencari guru berdasarkan token
     const teacher = await Teacher.findById(req.userId);
+
     if (!teacher) {
       return res.status(404).json({ message: "Teacher not found" });
     }
@@ -39,12 +81,12 @@ async function createExam(req, res) {
     const questionIds = await Promise.all(
       questions.map(async (q) => {
         const question = new Question({
-          exam: null,
           question: q.question,
           answerKey: q.answerKey, // Menyimpan kunci jawaban guru
           score: q.score, // Menyimpan guru membuat bobot persoalnya
         });
         await question.save();
+
         return question._id;
       })
     );
@@ -52,6 +94,8 @@ async function createExam(req, res) {
     // Membuat token ujian
     const examToken = generateExamToken(); // Fungsi untuk menghasilkan token ujian unik
     const exam = new Exam({
+      teacherId: teacher._id,
+      studentIds: teacher.students,
       subject,
       questions: questionIds,
       duration,
@@ -64,7 +108,7 @@ async function createExam(req, res) {
 
     res.status(201).json({ message: "Exam created", data: exam });
   } catch (error) {
-    res.status(500).json({ message: "Failed to create exam" });
+    res.status(500).json({ message: error.message });
   }
 }
 
@@ -239,7 +283,9 @@ function calculateCosineSimilarity(text1, text2) {
 // ...
 
 module.exports = {
+  getStudents,
   addStudents,
+  getExams,
   createExam,
   exportStudentAnswers,
   refreshExamToken,

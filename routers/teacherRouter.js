@@ -1,6 +1,8 @@
 const express = require("express");
 const {
+  getStudents,
   addStudents,
+  getExams,
   createExam,
   exportStudentAnswers,
   evaluateExam,
@@ -14,9 +16,12 @@ const {
 
 const router = express.Router();
 
-router.post("/add-students", verifyToken, authorizeTeacher, addStudents);
+router.get("/students", verifyToken, authorizeTeacher, getStudents);
+router.post("/students", verifyToken, authorizeTeacher, addStudents);
 
 router.post("/exams", verifyToken, authorizeTeacher, createExam);
+
+router.get("/exams", verifyToken, authorizeTeacher, getExams);
 
 router.get(
   "/exams/:examId/export-answers/:studentId",
