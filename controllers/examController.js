@@ -4,14 +4,14 @@ const Exam = require("../models/Exam");
 const Student = require("../models/Student");
 
 async function startExam(req, res) {
-  // const { examId } = req.params;
+  const { examId } = req.params;
   const { examToken } = req.body;
 
   try {
     // Mencari ujian berdasarkan ID
-    const exam = await Exam.findOne({ examToken });
+    const exam = await Exam.findById(examId);
     if (!exam) {
-      return res.status(404).json({ message: "Token Salah!" });
+      return res.status(404).json({ message: "Exam not found" });
     }
 
     // Mencari siswa berdasarkan token dan memasukkan token ke dalam ujian
@@ -21,23 +21,29 @@ async function startExam(req, res) {
     }
 
     // Cek apakah siswa telah memulai atau telah menyelesaikan ujian sebelumnya
-    const participant = exam.participants.find((p) =>
-      p.student.equals(student._id)
+    const participant = exam.participants.find(
+      (p) => p.studentId === student._id.toString()
     );
+
     if (participant) {
       return res
         .status(400)
         .json({ message: "You have already started the exam" });
     }
 
-    exam.participants.push({ student: student._id, examToken, answer: [] });
+    exam.participants.push({
+      studentId: student._id.toString(),
+      examToken,
+      answer: [],
+    });
     await exam.save();
 
-    // student.exams.push(exam._id); // Add the exam reference to the student's exams array
-    // await student.save();
+    student.exams.push(exam._id); // Add the exam reference to the student's exams array
+    await student.save();
 
     res.status(200).json({ message: "Exam started" });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Failed to start exam" });
   }
 }
@@ -60,9 +66,8 @@ async function submitExam(req, res) {
     }
 
     // Memastikan siswa telah memulai ujian sebelum mengirimkan jawaban
-
-    const participant = exam.participants.find((p) =>
-      p.studentId.equals(student._id)
+    const participant = exam.participants.find(
+      (p) => p.studentId === student._id.toString()
     );
 
     if (!participant) {
@@ -82,10 +87,9 @@ async function submitExam(req, res) {
 
     res.status(200).json({ message: "Exam submitted" });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: "Failed to submit exam" });
   }
 }
-
-module.exports = { startExam, submitExam };
 
 module.exports = { startExam, submitExam };
