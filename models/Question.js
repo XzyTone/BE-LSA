@@ -7,9 +7,13 @@ const questionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Exam'
   },
-  question: String,
+  question: {
+    type: String,
+    required: true
+  },
   answerKey: {
-    type: String // Kunci Jwaban Guru Untuk Mencocokan ke Siswa
+    type: String,
+    required: true
   },
   score: {
     type: Number,
@@ -17,4 +21,6 @@ const questionSchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model('Question', questionSchema);
+const Question = mongoose.model('Question', questionSchema);
+
+module.exports = Question;

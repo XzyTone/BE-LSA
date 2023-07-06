@@ -22,6 +22,10 @@ const studentSchema = new mongoose.Schema({
       type: String,
       required: true
     },
+    nilai_akhir: {
+      type: Number,
+      default: 0,
+    },
     role: {
       type: String,
       required: true,

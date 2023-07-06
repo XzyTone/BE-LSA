@@ -21,12 +21,12 @@ async function startExam(req, res) {
     }
 
     // Cek apakah siswa telah memulai atau telah menyelesaikan ujian sebelumnya
-    const participant = exam.participants.find((p) => p.student.equals(student._id));
+    const participant = exam.participants.find((p) => p.studentId === student._id.toString());
     if (participant) {
       return res.status(400).json({ message: 'You have already started the exam' });
     }
 
-    exam.participants.push({ student: student._id, examToken, answer: [] });
+    exam.participants.push({ studentId: student._id.toString(), examToken, answer: [] });
     await exam.save();
 
     student.exams.push(exam._id); // Add the exam reference to the student's exams array
@@ -34,6 +34,7 @@ async function startExam(req, res) {
 
     res.status(200).json({ message: 'Exam started' });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: 'Failed to start exam' });
   }
 }
@@ -57,7 +58,7 @@ async function submitExam(req, res) {
     }
 
     // Memastikan siswa telah memulai ujian sebelum mengirimkan jawaban
-    const participant = exam.participants.find((p) => p.student.equals(student._id));
+    const participant = exam.participants.find((p) => p.studentId === student._id.toString());
     if (!participant) {
       return res.status(400).json({ message: 'You have not started the exam' });
     }
@@ -73,13 +74,9 @@ async function submitExam(req, res) {
 
     res.status(200).json({ message: 'Exam submitted' });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ message: 'Failed to submit exam' });
   }
 }
-
-module.exports = { startExam, submitExam };
-
-
- 
 
 module.exports = { startExam, submitExam };
