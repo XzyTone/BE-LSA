@@ -1,14 +1,14 @@
 // controllers/teacherController.js
 
-const Exam = require('../models/Exam');
-const Question = require('../models/Question');
-const Teacher = require('../models/Teacher');
-const PDFDocument = require('pdfkit');
-const fs = require('fs');
-const natural = require('natural');
-const _ = require('lodash');
-const Student = require('../models/Student');
-const cosineSimilarity = require('compute-cosine-similarity');
+const Exam = require("../models/Exam");
+const Question = require("../models/Question");
+const Teacher = require("../models/Teacher");
+const PDFDocument = require("pdfkit");
+const fs = require("fs");
+const natural = require("natural");
+const _ = require("lodash");
+const Student = require("../models/Student");
+let stringComparison = require("string-comparison");
 
 function generateExamToken() {
   const characters =
@@ -26,6 +26,7 @@ function generateExamToken() {
 
 async function evaluateAnswers(req, res) {
   const { examId, studentId } = req.params;
+  const cosine = stringComparison.cosine;
 
   try {
     // Retrieve the exam data by ID
@@ -48,13 +49,13 @@ async function evaluateAnswers(req, res) {
     const answerKey = await Promise.all(
       exam.questions.map(async (questionId) => {
         const question = await Question.findById(questionId);
-        return [question.answerKey]; // Wrap the answer key in an array
+        return question.answerKey; // Wrap the answer key in an array
       })
     );
 
-    // Additional debugging information to check values
-    console.log("Answer Key:", answerKey);
-    console.log("Participant Answers:", participant.answer);
+    // // Additional debugging information to check values
+    // console.log("Answer Key:", answerKey);
+    // console.log("Participant score:", participant.score);
 
     // Check if answerKey and participant.answer are arrays of the same length
     if (
@@ -66,31 +67,35 @@ async function evaluateAnswers(req, res) {
     }
 
     // Calculate the score for each answer using Cosine Similarity
-    const scores = participant.answer.map((answer, index) => {
-      const score = cosineSimilarity(answerKey[index], [answer]); // Wrap the participant's answer in an array
-      return score * exam.questions[index].score;
-    });
+    const scores = await Promise.all(
+      participant.answer.map(async (answer, index) => {
+        const score = cosine.similarity(answerKey[index], answer); // Wrap the participant's answer in an array
 
+        const questions = await Question.findById(exam.questions[index]);
 
-    console.log("Scores:", scores);
-    console.log("type score",typeof score);
+        return score * questions.score;
+      })
+    );
 
+    console.log("scores: ", scores);
     // Calculate the final score by summing all the scores
     const finalScore = scores.reduce((total, score) => total + score, 0);
 
     // Update the participant's score in the exam
-    participant.score = finalScore;
+    participant.score = +finalScore.toFixed(1);
 
     // Save the updated exam data
     await exam.save();
 
-    res.status(200).json({ message: "Answers evaluated", score: finalScore });
+    res.status(200).json({
+      message: "Answers evaluated",
+      score: +finalScore.toFixed(1),
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Failed to evaluate answers" });
   }
 }
-
 
 async function addStudents(req, res) {
   const { studentIds } = req.body;
@@ -305,5 +310,5 @@ module.exports = {
   createExam,
   exportStudentAnswers,
   refreshExamToken,
-  evaluateAnswers
+  evaluateAnswers,
 };
