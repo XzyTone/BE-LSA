@@ -1,6 +1,6 @@
 // models/Student.js
 
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const studentSchema = new mongoose.Schema({
     exams: [
@@ -21,10 +21,6 @@ const studentSchema = new mongoose.Schema({
     password: {
       type: String,
       required: true
-    },
-    nilai_akhir: {
-      type: Number,
-      default: 0,
     },
     role: {
       type: String,
