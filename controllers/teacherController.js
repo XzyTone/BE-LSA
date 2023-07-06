@@ -1,13 +1,96 @@
 // controllers/teacherController.js
 
-const Exam = require("../models/Exam");
-const Question = require("../models/Question");
-const Teacher = require("../models/Teacher");
-const PDFDocument = require("pdfkit");
-const fs = require("fs");
-const natural = require("natural");
-const _ = require("lodash");
-const Student = require("../models/Student");
+const Exam = require('../models/Exam');
+const Question = require('../models/Question');
+const Teacher = require('../models/Teacher');
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+const natural = require('natural');
+const _ = require('lodash');
+const Student = require('../models/Student');
+const cosineSimilarity = require('compute-cosine-similarity');
+
+function generateExamToken() {
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let token = "";
+  const tokenLength = 8;
+
+  for (let i = 0; i < tokenLength; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    token += characters[randomIndex];
+  }
+
+  return token;
+}
+
+async function evaluateAnswers(req, res) {
+  const { examId, studentId } = req.params;
+
+  try {
+    // Retrieve the exam data by ID
+    const exam = await Exam.findById(examId);
+
+    if (!exam) {
+      return res.status(404).json({ message: "Exam not found" });
+    }
+
+    // Find the participant by studentId
+    const participant = exam.participants.find(
+      (p) => p.studentId === studentId
+    );
+
+    if (!participant) {
+      return res.status(404).json({ message: "Participant not found" });
+    }
+
+    // Retrieve the answer key for the exam
+    const answerKey = await Promise.all(
+      exam.questions.map(async (questionId) => {
+        const question = await Question.findById(questionId);
+        return [question.answerKey]; // Wrap the answer key in an array
+      })
+    );
+
+    // Additional debugging information to check values
+    console.log("Answer Key:", answerKey);
+    console.log("Participant Answers:", participant.answer);
+
+    // Check if answerKey and participant.answer are arrays of the same length
+    if (
+      !Array.isArray(answerKey) ||
+      !Array.isArray(participant.answer) ||
+      answerKey.length !== participant.answer.length
+    ) {
+      return res.status(400).json({ message: "Invalid answer data" });
+    }
+
+    // Calculate the score for each answer using Cosine Similarity
+    const scores = participant.answer.map((answer, index) => {
+      const score = cosineSimilarity(answerKey[index], [answer]); // Wrap the participant's answer in an array
+      return score * exam.questions[index].score;
+    });
+
+
+    console.log("Scores:", scores);
+    console.log("type score",typeof score);
+
+    // Calculate the final score by summing all the scores
+    const finalScore = scores.reduce((total, score) => total + score, 0);
+
+    // Update the participant's score in the exam
+    participant.score = finalScore;
+
+    // Save the updated exam data
+    await exam.save();
+
+    res.status(200).json({ message: "Answers evaluated", score: finalScore });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Failed to evaluate answers" });
+  }
+}
+
 
 async function addStudents(req, res) {
   const { studentIds } = req.body;
@@ -128,20 +211,6 @@ async function createExam(req, res) {
   }
 }
 
-function generateExamToken() {
-  const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let token = "";
-  const tokenLength = 8;
-
-  for (let i = 0; i < tokenLength; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    token += characters[randomIndex];
-  }
-
-  return token;
-}
-
 async function exportStudentAnswers(req, res) {
   try {
     const { examId, studentId } = req.params;
@@ -229,75 +298,6 @@ async function refreshExamToken(req, res) {
   }
 }
 
-async function evaluateExam(req, res) {
-  try {
-    const { examId } = req.params;
-
-    // Retrieve the exam data by ID, populating both 'participants.student' and 'questions'
-    const exam = await Exam.findById(examId)
-      .populate({
-        path: "participants.student",
-        select: "name",
-      })
-      .populate("questions");
-
-    if (!exam) {
-      return res.status(404).json({ message: "Exam not found" });
-    }
-
-    // Find the participant with the matching student ID
-    const participant = exam.participants.find(
-      (participant) => participant.student._id.toString() === req.userId // Assuming req.userId contains the student's ID
-    );
-
-    console.log("req.userId:", req.userId);
-    console.log("Exam participants:", exam.participants);
-
-    if (!participant) {
-      return res.status(404).json({ message: "Participant not found" });
-    }
-
-    // Retrieve the student's answers from the participant object
-    const studentAnswers = participant.answer;
-
-    // Calculate similarity scores using Cosine Similarity
-    const similarityScores = [];
-    participant.answer.forEach((answer, index) => {
-      const question = exam.questions[index];
-      const score = calculateCosineSimilarity(question.answerKey, answer);
-      similarityScores.push({ question, similarity: score });
-    });
-
-    // Calculate total score for the student
-    const totalScore = _.sumBy(similarityScores, "similarity");
-
-    res.status(200).json({ message: "Success", similarityScores, totalScore });
-  } catch (error) {
-    res.status(500).json({ message: "Failed to evaluate exam" });
-    console.error("Failed to evaluate exam:", error);
-  }
-}
-
-function calculateCosineSimilarity(text1, text2) {
-  const tokenizer = new natural.WordTokenizer();
-  const vector1 = tokenizer.tokenize(text1);
-  const vector2 = tokenizer.tokenize(text2);
-
-  const tfidf = new natural.TfIdf();
-  tfidf.addDocument(vector1.join(" "));
-  tfidf.addDocument(vector2.join(" "));
-
-  const vec1 = tfidf.getDocumentVector(0);
-  const vec2 = tfidf.getDocumentVector(1);
-
-  const similarity =
-    natural.Vector.dot(vec1, vec2) /
-    (natural.Vector.magnitude(vec1) * natural.Vector.magnitude(vec2));
-  return similarity;
-}
-
-// ...
-
 module.exports = {
   getStudents,
   addStudents,
@@ -305,5 +305,5 @@ module.exports = {
   createExam,
   exportStudentAnswers,
   refreshExamToken,
-  evaluateExam,
+  evaluateAnswers
 };

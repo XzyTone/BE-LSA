@@ -22,7 +22,7 @@ async function startExam(req, res) {
 
     // Cek apakah siswa telah memulai atau telah menyelesaikan ujian sebelumnya
     const participant = exam.participants.find((p) =>
-      p.studentId.equals(student._id)
+      p.student.equals(student._id)
     );
     if (participant) {
       return res
@@ -30,7 +30,7 @@ async function startExam(req, res) {
         .json({ message: "You have already started the exam" });
     }
 
-    exam.participants.push({ studentId: student._id, examToken, answer: [] });
+    exam.participants.push({ student: student._id, examToken, answer: [] });
     await exam.save();
 
     // student.exams.push(exam._id); // Add the exam reference to the student's exams array
@@ -60,9 +60,11 @@ async function submitExam(req, res) {
     }
 
     // Memastikan siswa telah memulai ujian sebelum mengirimkan jawaban
+
     const participant = exam.participants.find((p) =>
       p.studentId.equals(student._id)
     );
+
     if (!participant) {
       return res.status(400).json({ message: "You have not started the exam" });
     }
