@@ -66,19 +66,19 @@ const examSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  endTime: {
-    type: Date,
+  examToken: {
+    type: String,
     required: true,
   },
+  // endTime: {
+  //   type: Date,
+  //   required: true,
+  // },
   // refreshTokens: [
   //   {
   //     type: String
   //   }
   // ],
-  examToken: {
-    type: String,
-    required: true,
-  },
 });
 
 const Exam = mongoose.model("Exam", examSchema);

@@ -61,7 +61,7 @@ async function submitExam(req, res) {
 
     // Memastikan siswa telah memulai ujian sebelum mengirimkan jawaban
     const participant = exam.participants.find((p) =>
-      p.student.equals(student._id)
+      p.studentId.equals(student._id)
     );
     if (!participant) {
       return res.status(400).json({ message: "You have not started the exam" });

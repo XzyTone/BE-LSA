@@ -60,7 +60,23 @@ async function getExams(req, res) {
 
     const exams = await Exam.find({ teacherId: teacher._id });
 
-    return res.status(200).json({ data: exams });
+    const formattedExams = await Promise.all(
+      exams.map(async (exam) => {
+        const questions = await Question.find({ _id: { $in: exam.questions } });
+
+        return {
+          _id: exam._id,
+          subject: exam.subject,
+          endTime: exam.endTime,
+          duration: exam.duration,
+          examToken: exam.examToken,
+          participants: exam.participants,
+          questions,
+        };
+      })
+    );
+
+    return res.status(200).json({ data: formattedExams });
   } catch (error) {
     return res.status(500).json({ message: "Failed to get Exams" });
   }
@@ -99,8 +115,8 @@ async function createExam(req, res) {
       subject,
       questions: questionIds,
       duration,
-      endTime,
-      refreshTokens,
+      // endTime,
+      // refreshTokens,
       examToken, // Menyimpan token ujian dalam dokumen ujian
     });
 
