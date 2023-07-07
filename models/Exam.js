@@ -7,7 +7,7 @@ const examSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  studentIds: [String], //siswa yang mendapatkan ujian ini
+  studentIds: [String], // siswa yang mendapatkan ujian ini
   subject: {
     type: String,
     required: true,
@@ -25,13 +25,19 @@ const examSchema = new mongoose.Schema({
         type: String,
         required: true,
       },
-      answer: [
+      answers: [
         {
-          type: String,
+          questionId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Question",
+          },
+          answer: {
+            type: String,
+          },
         },
       ],
       score: {
-        type: Number
+        type: Number,
       },
     },
   ],
@@ -43,15 +49,6 @@ const examSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  // endTime: {
-  //   type: Date,
-  //   required: true,
-  // },
-  // refreshTokens: [
-  //   {
-  //     type: String
-  //   }
-  // ],
 });
 
 const Exam = mongoose.model("Exam", examSchema);

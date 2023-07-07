@@ -53,33 +53,39 @@ async function evaluateAnswers(req, res) {
       })
     );
 
-    // // Additional debugging information to check values
-    // console.log("Answer Key:", answerKey);
-    // console.log("Participant score:", participant.score);
-
     // Check if answerKey and participant.answer are arrays of the same length
     if (
       !Array.isArray(answerKey) ||
-      !Array.isArray(participant.answer) ||
-      answerKey.length !== participant.answer.length
+      !Array.isArray(participant.answers) ||
+      answerKey.length !== participant.answers.length
     ) {
       return res.status(400).json({ message: "Invalid answer data" });
     }
-
+       
     // Calculate the score for each answer using Cosine Similarity
     const scores = await Promise.all(
-      participant.answer.map(async (answer, index) => {
-        const score = cosine.similarity(answerKey[index], answer); // Wrap the participant's answer in an array
-
-        const questions = await Question.findById(exam.questions[index]);
-
-        return score * questions.score;
+      participant.answers.map(async (answer, index) => {
+        const score = cosine.similarity(answerKey[index], answer.answer); // Access the answer using answer.answer
+    
+        const question = await Question.findById(exam.questions[index]);
+        const questionWeight = question.score;
+    
+        return score * questionWeight;
       })
     );
-
+    
     console.log("scores: ", scores);
-    // Calculate the final score by summing all the scores
-    const finalScore = scores.reduce((total, score) => total + score, 0);
+
+    // Calculate the sum of scores and sum of question weights
+    const totalScore = scores.reduce((total, score) => total + score, 0);
+    const totalQuestionWeight = await exam.questions.reduce(async (totalPromise, questionId) => {
+      const total = await totalPromise;
+      const question = await Question.findById(questionId);
+      return total + question.score;
+    }, Promise.resolve(0));
+
+    // Calculate the final score based on the teacher's weight
+    const finalScore = (totalScore / totalQuestionWeight) * 100;
 
     // Update the participant's score in the exam
     participant.score = +finalScore.toFixed(1);
@@ -96,6 +102,7 @@ async function evaluateAnswers(req, res) {
     res.status(500).json({ message: "Failed to evaluate answers" });
   }
 }
+
 
 async function addStudents(req, res) {
   const { studentIds } = req.body;

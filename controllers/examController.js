@@ -75,14 +75,21 @@ async function submitExam(req, res) {
     }
 
     // Memastikan siswa belum mengirimkan jawaban sebelumnya
-    if (participant.answer.length > 0) {
+    if (participant.answers.length > 0) {
       return res
         .status(400)
         .json({ message: "You have already submitted the exam" });
     }
-
-    participant.answer = answers; // Perbarui properti answer dengan array jawaban siswa
-
+    
+    // Update the participant's answers based on the question IDs
+    answers.forEach(({ questionId, answer }) => {
+      const question = exam.questions.find(q => q._id.toString() === questionId);
+      participant.answers.push({
+        question: question ? question._id : null,
+        answer
+      });
+    });
+  
     await exam.save();
 
     res.status(200).json({ message: "Exam submitted" });
@@ -91,5 +98,7 @@ async function submitExam(req, res) {
     res.status(500).json({ message: "Failed to submit exam" });
   }
 }
+
+
 
 module.exports = { startExam, submitExam };
