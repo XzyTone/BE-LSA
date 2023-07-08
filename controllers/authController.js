@@ -46,17 +46,22 @@ async function login(req, res) {
   const { email, password } = req.body;
 
   try {
+    let user;
     // Mencari pengguna berdasarkan email
-    let user = await Student.findOne({ email });
+    const studentPromise = Student.findOne({ email: email });
+    const teacherPromise = Teacher.findOne({ email: email });
 
-    // Jika tidak ada siswa dengan email tersebut, coba mencari guru
-    if (!user) {
-      user = await Teacher.findOne({ email });
-    }
+    const [student, teacher] = await Promise.all([
+      studentPromise,
+      teacherPromise,
+    ]);
 
-    if (!user) {
+    // Jika tidak ada siswa atau guru
+    if (!student && !teacher) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    user = student || teacher;
 
     // Memverifikasi password
     const isPasswordValid = await bcrypt.compare(password, user.password);
