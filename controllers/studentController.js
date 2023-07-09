@@ -3,6 +3,7 @@
 const Exam = require("../models/Exam");
 const Question = require("../models/Question");
 const Student = require("../models/Student");
+const { getSubmittedExamsPromise } = require("./utils");
 
 async function getDashboard(req, res) {
   try {
@@ -53,36 +54,39 @@ async function getExamData(req, res) {
 
 async function getExamResult(req, res) {
   try {
-    // Mendapatkan hasil ujian siswa berdasarkan token
-    const student = await Student.findById(req.userId).populate({
-      path: "exams",
-      populate: { path: "exams.questions", select: "-exam" },
-    });
+    const student = await Student.findById(req.userId);
+    const studentId = student._id.toString();
 
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    const examResults = student.exams.map((exam) => {
-      const result = {
-        subject: exam.subject,
-        score: 0,
-        totalScore: 0,
-      };
-
-      exam.questions.forEach((question) => {
-        if (question.answer === question.userAnswer) {
-          result.score++;
-        }
-        result.totalScore++;
-      });
-
-      return result;
+    const exams = await Exam.find({
+      studentIds: { $in: studentId },
     });
 
-    res.status(200).json({ message: "Success", data: examResults });
+    // get submitted exams, scored or not
+    const submittedExams = exams.map((exam) => {
+      const scoredTest = exam.participants.find(
+        (participant) => participant.studentId === studentId
+      );
+
+      return scoredTest;
+    });
+
+    // promise that transform submitted exams to formatted result
+    const submittedExamsPromises = await getSubmittedExamsPromise(
+      exams,
+      submittedExams
+    );
+
+    const result = await Promise.all(submittedExamsPromises);
+
+    res
+      .status(200)
+      .json({ message: "Success", data: result.filter((result) => result) });
   } catch (error) {
-    res.status(500).json({ message: "Failed to get exam result" });
+    res.status(500).json({ message: error.message });
   }
 }
 

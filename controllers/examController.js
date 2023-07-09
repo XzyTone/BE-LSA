@@ -52,6 +52,8 @@ async function submitExam(req, res) {
   const { examId } = req.params;
   const { answers } = req.body;
 
+  console.log("answers: ", answers);
+
   try {
     // Mencari ujian berdasarkan ID
     const exam = await Exam.findById(examId);
@@ -80,16 +82,25 @@ async function submitExam(req, res) {
         .status(400)
         .json({ message: "You have already submitted the exam" });
     }
-    
+
     // Update the participant's answers based on the question IDs
     answers.forEach(({ questionId, answer }) => {
-      const question = exam.questions.find(q => q._id.toString() === questionId);
+      const examQuestionId = exam.questions.find(
+        (q) => q._id.toString() === questionId
+      );
+
+      if (!examQuestionId) {
+        return res
+          .status(400)
+          .json({ message: "Bad Request: question id not match" });
+      }
+
       participant.answers.push({
-        question: question ? question._id : null,
-        answer
+        questionId: examQuestionId ?? null,
+        answer,
       });
     });
-  
+
     await exam.save();
 
     res.status(200).json({ message: "Exam submitted" });
@@ -98,7 +109,5 @@ async function submitExam(req, res) {
     res.status(500).json({ message: "Failed to submit exam" });
   }
 }
-
-
 
 module.exports = { startExam, submitExam };
