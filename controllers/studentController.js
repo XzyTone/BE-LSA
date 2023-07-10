@@ -52,6 +52,7 @@ async function getExamData(req, res) {
           examToken: exam.examToken,
           participants: exam.participants,
           questions,
+          thumbnailPath: exam.thumbnailPath,
         };
       })
     );

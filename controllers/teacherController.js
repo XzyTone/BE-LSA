@@ -189,6 +189,7 @@ async function getExams(req, res) {
           examToken: exam.examToken,
           participants: exam.participants,
           questions,
+          thumbnailPath: exam.thumbnailPath,
         };
       })
     );
@@ -200,7 +201,7 @@ async function getExams(req, res) {
 }
 
 async function createExam(req, res) {
-  const { subject, questions, duration, endTime, refreshTokens } = req.body;
+  const { subject, questions, duration, thumbnailPath } = req.body;
 
   try {
     // Mencari guru berdasarkan token
@@ -232,6 +233,7 @@ async function createExam(req, res) {
       subject,
       questions: questionIds,
       duration,
+      thumbnailPath,
       // endTime,
       // refreshTokens,
       examToken, // Menyimpan token ujian dalam dokumen ujian

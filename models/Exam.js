@@ -45,6 +45,10 @@ const examSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  thumbnailPath: {
+    type: String,
+    required: true,
+  },
   examToken: {
     type: String,
     required: true,
