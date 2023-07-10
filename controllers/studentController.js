@@ -5,6 +5,16 @@ const Question = require("../models/Question");
 const Student = require("../models/Student");
 const { getSubmittedExamsPromise } = require("./utils");
 
+async function getAllStudents(req, res) {
+  try {
+    const students = await Student.find();
+
+    return res.status(200).json({ message: "Success", data: students });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to get students" });
+  }
+}
+
 async function getDashboard(req, res) {
   try {
     // Mendapatkan data siswa berdasarkan token
@@ -90,4 +100,4 @@ async function getExamResult(req, res) {
   }
 }
 
-module.exports = { getDashboard, getExamData, getExamResult };
+module.exports = { getAllStudents, getDashboard, getExamData, getExamResult };

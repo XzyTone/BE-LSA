@@ -111,6 +111,26 @@ async function addStudents(req, res) {
 
   try {
     const teacher = await Teacher.findById(req.userId);
+    const studentsExist = await Teacher.find({ students: { $in: studentIds } });
+
+    if (studentsExist.length > 0) {
+      await Exam.updateOne(
+        { teacherId: teacher._id.toString() },
+        { $push: { studentIds } }
+      );
+
+      await Teacher.updateMany(
+        { _id: teacher._id },
+        { $pullAll: { students: studentIds } }
+      );
+
+      return res.status(200).json({ message: "students removed" });
+    }
+
+    await Exam.updateMany(
+      { teacherId: teacher._id },
+      { $pullAll: { studentIds } }
+    );
 
     await Teacher.updateOne(
       { _id: teacher._id },
