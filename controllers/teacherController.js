@@ -5,10 +5,9 @@ const Question = require("../models/Question");
 const Teacher = require("../models/Teacher");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
-const natural = require("natural");
 const _ = require("lodash");
 const Student = require("../models/Student");
-let stringComparison = require("string-comparison");
+const { evaluateWithCosine, evaluateWithDice } = require("./utils");
 
 function generateExamToken() {
   const characters =
@@ -26,9 +25,10 @@ function generateExamToken() {
 
 async function evaluateAnswers(req, res) {
   const { examId, studentId } = req.params;
-  const cosine = stringComparison.cosine;
+  const { method } = req.body;
 
   try {
+    let scores;
     // Retrieve the exam data by ID
     const exam = await Exam.findById(examId);
 
@@ -62,17 +62,17 @@ async function evaluateAnswers(req, res) {
       return res.status(400).json({ message: "Invalid answer data" });
     }
 
-    // Calculate the score for each answer using Cosine Similarity
-    const scores = await Promise.all(
-      participant.answers.map(async (answer, index) => {
-        const score = cosine.similarity(answerKey[index], answer.answer); // Access the answer using answer.answer
-
-        const question = await Question.findById(exam.questions[index]);
-        const questionWeight = question.score;
-
-        return score * questionWeight;
-      })
-    );
+    if (method === "cosine") {
+      // Calculate the score for each answer using Cosine Similarity
+      scores = await Promise.all(
+        await evaluateWithCosine(participant, answerKey, exam)
+      );
+    } else {
+      // Calculate the score for each answer using Dice similarity coefficient
+      scores = await Promise.all(
+        await evaluateWithDice(participant, answerKey, exam)
+      );
+    }
 
     console.log("scores: ", scores);
 
