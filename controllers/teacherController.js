@@ -114,12 +114,12 @@ async function addStudents(req, res) {
     const studentsExist = await Teacher.find({ students: { $in: studentIds } });
 
     if (studentsExist.length > 0) {
-      await Exam.updateOne(
+      await Exam.updateMany(
         { teacherId: teacher._id.toString() },
-        { $push: { studentIds } }
+        { $pullAll: { studentIds } }
       );
 
-      await Teacher.updateMany(
+      await Teacher.updateOne(
         { _id: teacher._id },
         { $pullAll: { students: studentIds } }
       );
@@ -128,8 +128,8 @@ async function addStudents(req, res) {
     }
 
     await Exam.updateMany(
-      { teacherId: teacher._id },
-      { $pullAll: { studentIds } }
+      { teacherId: teacher._id.toString() },
+      { $push: { studentIds } }
     );
 
     await Teacher.updateOne(
