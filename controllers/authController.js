@@ -90,6 +90,7 @@ async function login(req, res) {
     res.status(500).json({ message: "Failed to login" });
   }
 }
+
 async function refresh(req, res) {
   try {
     // Find the user based on the userId in the request

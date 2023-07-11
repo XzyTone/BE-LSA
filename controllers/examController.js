@@ -1,5 +1,4 @@
-// controllers/examController.js
-
+const jwt = require("jsonwebtoken");
 const Exam = require("../models/Exam");
 const Student = require("../models/Student");
 
@@ -8,14 +7,22 @@ async function startExam(req, res) {
   const { examToken } = req.body;
 
   try {
+    const user = await Student.findById(req.userId);
     // Mencari ujian berdasarkan ID
     const exam = await Exam.findById(examId);
+    const matchExam = exam.examToken === examToken;
+
     if (!exam) {
       return res.status(404).json({ message: "Exam not found" });
     }
 
+    if (!matchExam) {
+      return res.status(404).json({ message: "Token not valid" });
+    }
+
     // Mencari siswa berdasarkan token dan memasukkan token ke dalam ujian
     const student = await Student.findById(req.userId);
+
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
@@ -36,23 +43,37 @@ async function startExam(req, res) {
       examToken,
       answer: [],
     });
+
     await exam.save();
 
     student.exams.push(exam._id); // Add the exam reference to the student's exams array
     await student.save();
 
-    res.status(200).json({ message: "Exam started" });
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(200).json({
+      message: "Exam started",
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "Failed to start exam" });
+    res.status(500).json({ message: error.message });
   }
 }
 
 async function submitExam(req, res) {
   const { examId } = req.params;
   const { answers } = req.body;
-
-  console.log("answers: ", answers);
 
   try {
     // Mencari ujian berdasarkan ID
