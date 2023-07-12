@@ -54,11 +54,7 @@ async function evaluateAnswers(req, res) {
     );
 
     // Check if answerKey and participant.answer are arrays of the same length
-    if (
-      !Array.isArray(answerKey) ||
-      !Array.isArray(participant.answers) ||
-      answerKey.length !== participant.answers.length
-    ) {
+    if (!Array.isArray(answerKey) || !Array.isArray(participant.answers)) {
       return res.status(400).json({ message: "Invalid answer data" });
     }
 
