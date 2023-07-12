@@ -74,8 +74,6 @@ async function evaluateAnswers(req, res) {
       );
     }
 
-    console.log("scores: ", scores);
-
     // Calculate the sum of scores and sum of question weights
     const totalScore = scores.reduce((total, score) => total + score, 0);
     const totalQuestionWeight = await exam.questions.reduce(
@@ -91,7 +89,11 @@ async function evaluateAnswers(req, res) {
     const finalScore = (totalScore / totalQuestionWeight) * 100;
 
     // Update the participant's score in the exam
-    participant.score = +finalScore.toFixed(1);
+    if (method === "cosine") {
+      participant.cosineScore = +finalScore.toFixed(1);
+    } else if (method === "dice") {
+      participant.diceScore = +finalScore.toFixed(1);
+    }
 
     // Save the updated exam data
     await exam.save();

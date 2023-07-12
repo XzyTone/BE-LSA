@@ -8,6 +8,7 @@ const authRouter = require("./routers/authRouter");
 const studentRouter = require("./routers/studentRouter");
 const teacherRouter = require("./routers/teacherRouter");
 const examRouter = require("./routers/examRouter");
+const dataRouter = require("./routers/dataRouter");
 
 dotenv.config();
 
@@ -41,3 +42,4 @@ app.use("/auth", authRouter);
 app.use("/student", studentRouter);
 app.use("/teacher", teacherRouter);
 app.use("/exam", examRouter);
+app.use(dataRouter);

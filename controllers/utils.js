@@ -52,12 +52,13 @@ const getSubmittedExamsPromise = async (exams, submittedExams) => {
       const exam = exams.find((exam) => exam.examToken === test.examToken);
 
       if (exam) {
-        const { score, answers } = test;
+        const { answers, cosineScore, diceScore } = test;
         const answersPromises = await getAnswersDetail(answers);
 
         return {
           subject: exam.subject,
-          score: score ?? null,
+          cosineScore: cosineScore ?? null,
+          diceScore: diceScore ?? null,
           detail: await Promise.all(answersPromises),
         };
       }

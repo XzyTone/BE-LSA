@@ -36,7 +36,10 @@ const examSchema = new mongoose.Schema({
           },
         },
       ],
-      score: {
+      cosineScore: {
+        type: Number,
+      },
+      diceScore: {
         type: Number,
       },
     },
