@@ -25,7 +25,7 @@ function generateExamToken() {
 
 async function evaluateAnswers(req, res) {
   const { examId, studentId } = req.params;
-  const { method } = req.body;
+  const { method, manualScore } = req.body;
 
   try {
     let scores;
@@ -43,6 +43,18 @@ async function evaluateAnswers(req, res) {
 
     if (!participant) {
       return res.status(404).json({ message: "Participant not found" });
+    }
+
+    if (manualScore) {
+      participant.score = manualScore;
+
+      // Save the updated exam data
+      await exam.save();
+
+      return res.status(200).json({
+        message: "Answers evaluated",
+        score: manualScore,
+      });
     }
 
     // Retrieve the answer key for the exam
@@ -63,7 +75,7 @@ async function evaluateAnswers(req, res) {
       scores = await Promise.all(
         await evaluateWithCosine(participant, answerKey, exam)
       );
-    } else {
+    } else if (method === "dice") {
       // Calculate the score for each answer using Dice similarity coefficient
       scores = await Promise.all(
         await evaluateWithDice(participant, answerKey, exam)
@@ -85,11 +97,8 @@ async function evaluateAnswers(req, res) {
     const finalScore = (totalScore / totalQuestionWeight) * 100;
 
     // Update the participant's score in the exam
-    if (method === "cosine") {
-      participant.cosineScore = +finalScore.toFixed(1);
-    } else if (method === "dice") {
-      participant.diceScore = +finalScore.toFixed(1);
-    }
+
+    participant.score = +finalScore.toFixed(1);
 
     // Save the updated exam data
     await exam.save();
