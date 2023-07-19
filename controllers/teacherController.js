@@ -29,6 +29,8 @@ async function evaluateAnswers(req, res) {
 
   try {
     let scores;
+    let accuracies = []; // Array untuk menyimpan akurasi per pertanyaan
+
     // Retrieve the exam data by ID
     const exam = await Exam.findById(examId);
 
@@ -75,11 +77,57 @@ async function evaluateAnswers(req, res) {
       scores = await Promise.all(
         await evaluateWithCosine(participant, answerKey, exam)
       );
+
+      // Calculate the accuracy percentage per question based on Cosine Similarity
+      accuracies = participant.answers.map((answer, index) => {
+        const similarity = scores[index];
+        const answerKeyTokens = answerKey[index].split(" ");
+        const answerTokens = String(answer).split(" "); // Ensure answer is a string
+
+        const matchingTokens = answerTokens.filter((token) =>
+          answerKeyTokens.includes(token)
+        );
+
+        const accuracy = (
+          (matchingTokens.length / answerKeyTokens.length) *
+          100
+        ).toFixed(1);
+
+        participant.answers[index].accuracy = accuracy;
+
+        return {
+          questionIndex: index + 1,
+          accuracy: `${accuracy}%`,
+        };
+      });
     } else if (method === "dice") {
       // Calculate the score for each answer using Dice similarity coefficient
       scores = await Promise.all(
         await evaluateWithDice(participant, answerKey, exam)
       );
+
+      // Calculate the accuracy percentage per question based on Dice similarity coefficient
+      accuracies = participant.answers.map((answer, index) => {
+        const similarity = scores[index];
+        const answerKeyTokens = answerKey[index].split(" ");
+        const answerTokens = String(answer).split(" "); // Ensure answer is a string
+
+        const matchingTokens = answerTokens.filter((token) =>
+          answerKeyTokens.includes(token)
+        );
+
+        const accuracy = (
+          (matchingTokens.length / answerKeyTokens.length) *
+          100
+        ).toFixed(1);
+
+        participant.answers[index].accuracy = accuracy;
+
+        return {
+          questionIndex: index + 1,
+          accuracy: `${accuracy}%`,
+        };
+      });
     }
 
     // Calculate the sum of scores and sum of question weights
@@ -106,6 +154,7 @@ async function evaluateAnswers(req, res) {
     res.status(200).json({
       message: "Answers evaluated",
       score: +finalScore.toFixed(1),
+      accuracies,
     });
   } catch (error) {
     console.log(error);

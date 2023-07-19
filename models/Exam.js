@@ -34,6 +34,9 @@ const examSchema = new mongoose.Schema({
           answer: {
             type: String,
           },
+          accuracy: {
+            type: Number,
+          },
         },
       ],
       score: {

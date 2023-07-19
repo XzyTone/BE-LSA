@@ -7,6 +7,7 @@ const {
   exportStudentAnswers,
   refreshExamToken, // Add this line
   evaluateAnswers,
+  getAnswersAccuracy,
 } = require("../controllers/teacherController");
 
 const {
