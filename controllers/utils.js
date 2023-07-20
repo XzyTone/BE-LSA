@@ -59,6 +59,7 @@ const getSubmittedExamsPromise = async (exams, submittedExams) => {
           subject: exam.subject,
           score: score ?? null,
           detail: await Promise.all(answersPromises),
+          isEvaluated: test.isEvaluated,
         };
       }
     }

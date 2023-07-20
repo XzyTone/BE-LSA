@@ -7,7 +7,7 @@ const {
   exportStudentAnswers,
   refreshExamToken, // Add this line
   evaluateAnswers,
-  getAnswersAccuracy,
+  submitParticipantScore,
 } = require("../controllers/teacherController");
 
 const {
@@ -44,5 +44,8 @@ router.post(
   authorizeTeacher,
   evaluateAnswers
 );
+
+// submit score
+router.post("/exams/submit-score/:examId/:studentId", submitParticipantScore);
 
 module.exports = router;

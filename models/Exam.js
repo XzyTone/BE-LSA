@@ -42,6 +42,9 @@ const examSchema = new mongoose.Schema({
       score: {
         type: Number,
       },
+      isEvaluated: {
+        type: Boolean,
+      },
     },
   ],
   duration: {

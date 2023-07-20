@@ -49,6 +49,7 @@ async function evaluateAnswers(req, res) {
 
     if (manualScore) {
       participant.score = manualScore;
+      participant.isEvaluated = false;
 
       // Save the updated exam data
       await exam.save();
@@ -147,6 +148,7 @@ async function evaluateAnswers(req, res) {
     // Update the participant's score in the exam
 
     participant.score = +finalScore.toFixed(1);
+    participant.isEvaluated = false;
 
     // Save the updated exam data
     await exam.save();
@@ -159,6 +161,38 @@ async function evaluateAnswers(req, res) {
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Failed to evaluate answers" });
+  }
+}
+
+async function submitParticipantScore(req, res) {
+  try {
+    const { examId, studentId } = req.params;
+
+    // Retrieve the exam data by ID
+    const exam = await Exam.findById(examId);
+
+    if (!exam) {
+      return res.status(404).json({ message: "Exam not found" });
+    }
+
+    // Find the participant by studentId
+    const participant = exam.participants.find(
+      (p) => p.studentId === studentId
+    );
+
+    if (!participant) {
+      return res.status(404).json({ message: "Participant not found" });
+    }
+
+    participant.isEvaluated = true;
+
+    exam.save();
+
+    return res.status(200).json({ data: null, message: "Score submitted" });
+  } catch (error) {
+    console.log("error submit score: ", error.message);
+
+    res.status(500).json({ message: "Failed to submit score" });
   }
 }
 
@@ -398,4 +432,5 @@ module.exports = {
   exportStudentAnswers,
   refreshExamToken,
   evaluateAnswers,
+  submitParticipantScore,
 };
